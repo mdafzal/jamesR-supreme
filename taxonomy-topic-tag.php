@@ -17,7 +17,7 @@ get_header(); // Loads the header.php template. ?>
 
 		<?php do_atomic( 'open_content' ); // supreme_open_content ?>
 
-		<div class="hfeed">
+		<div class="hfeed taxonomy-topic-tag">
 			
 			<?php get_sidebar( 'before-content' ); // Loads the sidebar-before-content.php template. ?>
 

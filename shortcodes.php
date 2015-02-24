@@ -1,477 +1,555 @@
-<?php
-/**
- * Shortcodes bundled for use with themes.  These shortcodes are not meant to be used with the post content 
- * editor.  Their purpose is to make it easier for users to filter hooks without having to know too much PHP code
- * and to provide access to specific functionality in other (non-post content) shortcode-aware areas.  Note that 
- * some shortcodes are specific to posts and comments and would be useless outside of the post and comment 
- * loops.  To use the shortcodes, a theme must register support for 'hybrid-core-shortcodes'.
- *
- * @package HybridCore
- * @subpackage Functions
- * @author Justin Tadlock <justin@justintadlock.com>
- * @copyright Copyright (c) 2008 - 2012, Justin Tadlock
- * @link http://themehybrid.com/hybrid-core
- * @license http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- */
-
-/* Register shortcodes. */
-add_action( 'init', 'hybrid_add_shortcodes' );
-
-/**
- * Creates new shortcodes for use in any shortcode-ready area.  This function uses the add_shortcode() 
- * function to register new shortcodes with WordPress.
- *
- * @since 0.8.0
- * @access private
- * @uses add_shortcode() to create new shortcodes.
- * @link http://codex.wordpress.org/Shortcode_API
- * @return void
- */
-function hybrid_add_shortcodes() {
-
-	/* Add theme-specific shortcodes. */
-	add_shortcode( 'the-year', 'hybrid_the_year_shortcode' );
-	add_shortcode( 'site-link', 'hybrid_site_link_shortcode' );
-	add_shortcode( 'wp-link', 'hybrid_wp_link_shortcode' );
-	add_shortcode( 'theme-link', 'hybrid_theme_link_shortcode' );
-	add_shortcode( 'child-link', 'hybrid_child_link_shortcode' );
-	add_shortcode( 'loginout-link', 'hybrid_loginout_link_shortcode' );
-	add_shortcode( 'query-counter', 'hybrid_query_counter_shortcode' );
-	add_shortcode( 'nav-menu', 'hybrid_nav_menu_shortcode' );
-
-	/* Add entry-specific shortcodes. */
-	add_shortcode( 'entry-title', 'hybrid_entry_title_shortcode' );
-	add_shortcode( 'entry-author', 'hybrid_entry_author_shortcode' );
-	add_shortcode( 'entry-terms', 'hybrid_entry_terms_shortcode' );
-	add_shortcode( 'entry-comments-link', 'hybrid_entry_comments_link_shortcode' );
-	add_shortcode( 'entry-published', 'hybrid_entry_published_shortcode' );
-	add_shortcode( 'entry-edit-link', 'hybrid_entry_edit_link_shortcode' );
-	add_shortcode( 'entry-shortlink', 'hybrid_entry_shortlink_shortcode' );
-	add_shortcode( 'entry-permalink', 'hybrid_entry_permalink_shortcode' );
-	add_shortcode( 'post-format-link', 'hybrid_post_format_link_shortcode' );
-
-	/* Add comment-specific shortcodes. */
-	add_shortcode( 'comment-published', 'hybrid_comment_published_shortcode' );
-	add_shortcode( 'comment-author', 'hybrid_comment_author_shortcode' );
-	add_shortcode( 'comment-edit-link', 'hybrid_comment_edit_link_shortcode' );
-	add_shortcode( 'comment-reply-link', 'hybrid_comment_reply_link_shortcode' );
-	add_shortcode( 'comment-permalink', 'hybrid_comment_permalink_shortcode' );
-}
-
-/**
- * Shortcode to display the current year.
- *
- * @since 0.6.0
- * @access public
- * @uses date() Gets the current year.
- * @return string
- */
-function hybrid_the_year_shortcode() {
-	return date( __( 'Y', 'hybrid-core' ) );
-}
-
-/**
- * Shortcode to display a link back to the site.
- *
- * @since 0.6.0
- * @access public
- * @uses get_bloginfo() Gets information about the install.
- * @return string
- */
-function hybrid_site_link_shortcode() {
-	return '<a class="site-link" href="' . home_url() . '" title="' . esc_attr( get_bloginfo( 'name' ) ) . '" rel="home"><span>' . get_bloginfo( 'name' ) . '</span></a>';
-}
-
-/**
- * Shortcode to display a link to WordPress.org.
- *
- * @since 0.6.0
- * @access public
- * @return string
- */
-function hybrid_wp_link_shortcode() {
-	return '<a class="wp-link" href="http://wordpress.org" title="' . esc_attr__( 'State-of-the-art semantic personal publishing platform', 'hybrid-core' ) . '"><span>' . __( 'WordPress', 'hybrid-core' ) . '</span></a>';
-}
-
-/**
- * Shortcode to display a link to the parent theme page.
- *
- * @since 0.6.0
- * @access public
- * @uses wp_get_theme() Gets theme (parent theme) information.
- * @return string
- */
-function hybrid_theme_link_shortcode() {
-	$theme = wp_get_theme( get_template(), get_theme_root( get_template_directory() ) );
-	return '<a class="theme-link" href="' . esc_url( $theme->get( 'ThemeURI' ) ) . '" title="' . sprintf( esc_attr__( '%s WordPress Theme', 'hybrid-core' ), $theme->get( 'Name' ) ) . '"><span>' . esc_attr( $theme->get( 'Name' ) ) . '</span></a>';
-}
-
-/**
- * Shortcode to display a link to the child theme's page.
- *
- * @since 0.6.0
- * @access public
- * @uses wp_get_theme() Gets theme (child theme) information.
- * @return string
- */
-function hybrid_child_link_shortcode() {
-	$theme = wp_get_theme( get_stylesheet(), get_theme_root( get_stylesheet_directory() ) );
-	return '<a class="child-link" href="' . esc_url( $theme->get( 'ThemeURI' ) ) . '" title="' . esc_attr( $theme->get( 'Name' ) ) . '"><span>' . esc_html( $theme->get( 'Name' ) ) . '</span></a>';
-}
-
-/**
- * Shortcode to display a login link or logout link.
- *
- * @since 0.6.0
- * @access public
- * @uses is_user_logged_in() Checks if the current user is logged into the site.
- * @uses wp_logout_url() Creates a logout URL.
- * @uses wp_login_url() Creates a login URL.
- * @return string
- */
-function hybrid_loginout_link_shortcode() {
-	if ( is_user_logged_in() )
-		$out = '<a class="logout-link" href="' . esc_url( wp_logout_url( site_url( $_SERVER['REQUEST_URI'] ) ) ) . '" title="' . esc_attr__( 'Log out', 'hybrid-core' ) . '">' . __( 'Log out', 'hybrid-core' ) . '</a>';
-	else
-		$out = '<a class="login-link" href="' . esc_url( wp_login_url( site_url( $_SERVER['REQUEST_URI'] ) ) ) . '" title="' . esc_attr__( 'Log in', 'hybrid-core' ) . '">' . __( 'Log in', 'hybrid-core' ) . '</a>';
-
-	return $out;
-}
-
-/**
- * Displays query count and load time if the current user can edit themes.
- *
- * @since 0.6.0
- * @access public
- * @uses current_user_can() Checks if the current user can edit themes.
- * @return string
- */
-function hybrid_query_counter_shortcode() {
-	if ( current_user_can( 'edit_theme_options' ) )
-		return sprintf( __( 'This page loaded in %1$s seconds with %2$s database queries.', 'hybrid-core' ), timer_stop( 0, 3 ), get_num_queries() );
-	return '';
-}
-
-/**
- * Displays a nav menu that has been created from the Menus screen in the admin.
- *
- * @since 0.8.0
- * @access public
- * @uses wp_nav_menu() Displays the nav menu.
- * @return string
- */
-function hybrid_nav_menu_shortcode( $attr ) {
-
-	$attr = shortcode_atts(
-		array(
-			'menu' => '',
-			'container' => 'div',
-			'container_id' => '',
-			'container_class' => 'nav-menu',
-			'menu_id' => '',
-			'menu_class' => '',
-			'link_before' => '',
-			'link_after' => '',
-			'before' => '',
-			'after' => '',
-			'fallback_cb' => 'wp_page_menu',
-			'walker' => ''
-		),
-		$attr
-	);
-	$attr['echo'] = false;
-
-	return wp_nav_menu( $attr );
-}
-
-/**
- * Displays the edit link for an individual post.
- *
- * @since 0.7.0
- * @access public
- * @param array $attr
- * @return string
- */
-function hybrid_entry_edit_link_shortcode( $attr ) {
-
-	$post_type = get_post_type_object( get_post_type() );
-
-	if ( !current_user_can( @$post_type->cap->edit_post, get_the_ID() ) )
-		return '';
-
-	$attr = shortcode_atts( array( 'before' => '', 'after' => '' ), $attr );
-
-	return $attr['before'] . '<span class="edit"><a class="post-edit-link" href="' . esc_url( get_edit_post_link( get_the_ID() ) ) . '" title="' . sprintf( esc_attr__( 'Edit %1$s', 'hybrid-core' ), $post_type->labels->singular_name ) . '">' . __( 'Edit', 'hybrid-core' ) . '</a></span>' . $attr['after'];
-}
-
-/**
- * Displays the published date of an individual post.
- *
- * @since 0.7.0
- * @access public
- * @param array $attr
- * @return string
- */
-function hybrid_entry_published_shortcode( $attr ) {
-	$attr = shortcode_atts( array( 'before' => '', 'after' => '', 'format' => get_option( 'date_format' ) ), $attr );
-
-	$published = '<abbr class="published" title="' . sprintf( get_the_time( esc_attr__( 'l, F jS, Y, g:i a', 'hybrid-core' ) ) ) . '">' . sprintf( get_the_time( $attr['format'] ) ) . '</abbr>';
-	return $attr['before'] . $published . $attr['after'];
-}
-
-/**
- * Displays a post's number of comments wrapped in a link to the comments area.
- *
- * @since 0.7.0
- * @access public
- * @param array $attr
- * @return string
- */
-function hybrid_entry_comments_link_shortcode( $attr ) {
-
-	$comments_link = '';
-	$number = doubleval( get_comments_number() );
-	$attr = shortcode_atts( array( 'zero' => __( 'Leave a response', 'hybrid-core' ), 'one' => __( '%1$s Response', 'hybrid-core' ), 'more' => __( '%1$s Responses', 'hybrid-core' ), 'css_class' => 'comments-link', 'none' => '', 'before' => '', 'after' => '' ), $attr );
-
-	if ( 0 == $number && !comments_open() && !pings_open() ) {
-		if ( $attr['none'] )
-			$comments_link = '<span class="' . esc_attr( $attr['css_class'] ) . '">' . sprintf( $attr['none'], number_format_i18n( $number ) ) . '</span>';
-	}
-	elseif ( 0 == $number )
-		$comments_link = '<a class="' . esc_attr( $attr['css_class'] ) . '" href="' . get_permalink() . '#respond" title="' . sprintf( esc_attr__( 'Comment on %1$s', 'hybrid-core' ), the_title_attribute( 'echo=0' ) ) . '">' . sprintf( $attr['zero'], number_format_i18n( $number ) ) . '</a>';
-	elseif ( 1 == $number )
-		$comments_link = '<a class="' . esc_attr( $attr['css_class'] ) . '" href="' . get_comments_link() . '" title="' . sprintf( esc_attr__( 'Comment on %1$s', 'hybrid-core' ), the_title_attribute( 'echo=0' ) ) . '">' . sprintf( $attr['one'], number_format_i18n( $number ) ) . '</a>';
-	elseif ( 1 < $number )
-		$comments_link = '<a class="' . esc_attr( $attr['css_class'] ) . '" href="' . get_comments_link() . '" title="' . sprintf( esc_attr__( 'Comment on %1$s', 'hybrid-core' ), the_title_attribute( 'echo=0' ) ) . '">' . sprintf( $attr['more'], number_format_i18n( $number ) ) . '</a>';
-
-	if ( $comments_link )
-		$comments_link = $attr['before'] . $comments_link . $attr['after'];
-
-	return $comments_link;
-}
-
-/**
- * Displays an individual post's author with a link to his or her archive.
- *
- * @since 0.7.0
- * @access public
- * @param array $attr
- * @return string
- */
-function hybrid_entry_author_shortcode( $attr ) {
-	$attr = shortcode_atts( array( 'before' => '', 'after' => '' ), $attr );
-	$author = '<span class="author vcard"><a class="url fn n" href="' . esc_url( get_author_posts_url( get_the_author_meta( 'ID' ) ) ) . '" title="' . esc_attr( get_the_author_meta( 'display_name' ) ) . '">' . get_the_author_meta( 'display_name' ) . '</a></span>';
-	return $attr['before'] . $author . $attr['after'];
-}
-
-/**
- * Displays a list of terms for a specific taxonomy.
- *
- * @since 0.7.0
- * @access public
- * @param array $attr
- * @return string
- */
-function hybrid_entry_terms_shortcode( $attr ) {
-
-	$attr = shortcode_atts( array( 'id' => get_the_ID(), 'taxonomy' => 'post_tag', 'separator' => ', ', 'before' => '', 'after' => '' ), $attr );
-
-	$attr['before'] = ( empty( $attr['before'] ) ? '<span class="' . $attr['taxonomy'] . '">' : '<span class="' . $attr['taxonomy'] . '"><span class="before">' . $attr['before'] . '</span>' );
-	$attr['after'] = ( empty( $attr['after'] ) ? '</span>' : '<span class="after">' . $attr['after'] . '</span></span>' );
-
-	return get_the_term_list( $attr['id'], $attr['taxonomy'], $attr['before'], $attr['separator'], $attr['after'] );
-}
-
-/**
- * Displays a post's title with a link to the post.
- *
- * @since 0.7.0
- * @access public
- * @return string
- */
-function hybrid_entry_title_shortcode( $attr ) {
-
-	$attr = shortcode_atts( array( 'permalink' => true ), $attr );
-
-	$tag = is_singular() ? 'h1' : 'h2';
-	$class = sanitize_html_class( get_post_type() ) . '-title entry-title';
-
-	if ( false == (bool)$attr['permalink'] )
-		$title = the_title( "<{$tag} class='{$class}'>", "</{$tag}>", false );
-	else
-		$title = the_title( "<{$tag} class='{$class}'><a href='" . get_permalink() . "'>", "</a></{$tag}>", false );
-
-	if ( empty( $title ) && !is_singular() )
-		$title = "<{$tag} class='{$class}'><a href='" . get_permalink() . "'>" . __( '(Untitled)', 'hybrid-core' ) . "</a></{$tag}>";
-
-	if ( is_singular() )
-		$title = the_title("<{$tag} class='{$class}'>", "</{$tag}>", false );
-
-	return $title;
-}
-
-/**
- * Displays the shortlink of an individual entry.
- *
- * @since 0.8.0
- * @access public
- * @return string
- */
-function hybrid_entry_shortlink_shortcode( $attr ) {
-
-	$attr = shortcode_atts(
-		array(
-			'text' => __( 'Shortlink', 'hybrid-core' ),
-			'title' => the_title_attribute( array( 'echo' => false ) ),
-			'before' => '',
-			'after' => ''
-		),
-		$attr
-	);
-
-	$shortlink = esc_url( wp_get_shortlink( get_the_ID() ) );
-
-	return "{$attr['before']}<a class='shortlink' href='{$shortlink}' title='" . esc_attr( $attr['title'] ) . "' rel='shortlink'>{$attr['text']}</a>{$attr['after']}";
-}
-
-/**
- * Returns the output of the [entry-permalink] shortcode, which is a link back to the post permalink page.
- *
- * @since 1.3.0.
- * @param array $attr The shortcode arguments.
- * @return string A permalink back to the post.
- */
-function hybrid_entry_permalink_shortcode( $attr ) {
-
-	$attr = shortcode_atts( array( 'before' => '', 'after' => '' ), $attr );
-
-	return $attr['before'] . '<a href="' . esc_url( get_permalink() ) . '" class="permalink">' . __( 'Permalink', 'hybrid-core' ) . '</a>' . $attr['after'];
-}
-
-/**
- * Returns the output of the [post-format-link] shortcode.  This shortcode is for use when a theme uses the 
- * post formats feature.
- *
- * @since 1.3.0.
- * @param array $attr The shortcode arguments.
- * @return string A link to the post format archive.
- */
-function hybrid_post_format_link_shortcode( $attr ) {
-
-	$attr = shortcode_atts( array( 'before' => '', 'after' => '' ), $attr );
-	$format = get_post_format();
-	$url = ( empty( $format ) ? get_permalink() : get_post_format_link( $format ) );
-
-	return $attr['before'] . '<a href="' . esc_url( $url ) . '" class="post-format-link">' . get_post_format_string( $format ) . '</a>' . $attr['after'];
-}
-
-/**
- * Displays the published date and time of an individual comment.
- *
- * @since 0.7.0
- * @access public
- * @return string
- */
-function hybrid_comment_published_shortcode() {
-	$link = '<span class="published">' . sprintf( __( '%1$s at %2$s', 'hybrid-core' ), '<abbr class="comment-date" title="' . get_comment_date( esc_attr__( 'l, F jS, Y, g:i a', 'hybrid-core' ) ) . '">' . get_comment_date() . '</abbr>', '<abbr class="comment-time" title="' . get_comment_date( esc_attr__( 'l, F jS, Y, g:i a', 'hybrid-core' ) ) . '">' . get_comment_time() . '</abbr>' ) . '</span>';
-	return $link;
-}
-
-/**
- * Displays the comment author of an individual comment.
- *
- * @since 0.8.0
- * @access public
- * @global $comment The current comment's DB object.
- * @return string
- */
-function hybrid_comment_author_shortcode( $attr ) {
-	global $comment;
-
-	$attr = shortcode_atts(
-		array(
-			'before' => '',
-			'after' => '',
-			'tag' => 'span' // @deprecated 1.2.0 Back-compatibility. Please don't use this argument.
-		),
-		$attr
-	);
-
-	$author = esc_html( get_comment_author( $comment->comment_ID ) );
-	$url = esc_url( get_comment_author_url( $comment->comment_ID ) );
-
-	/* Display link and cite if URL is set. Also, properly cites trackbacks/pingbacks. */
-	if ( $url )
-		$output = '<cite class="fn" title="' . $url . '"><a href="' . $url . '" title="' . esc_attr( $author ) . '" class="url" rel="external nofollow">' . $author . '</a></cite>';
-	else
-		$output = '<cite class="fn">' . $author . '</cite>';
-
-	$output = '<' . tag_escape( $attr['tag'] ) . ' class="comment-author vcard">' . $attr['before'] . apply_filters( 'get_comment_author_link', $output ) . $attr['after'] . '</' . tag_escape( $attr['tag'] ) . '><!-- .comment-author .vcard -->';
-
-	return $output;
-}
-
-/**
- * Displays the permalink to an individual comment.
- *
- * @since 0.7.0
- * @access public
- * @return string
- */
-function hybrid_comment_permalink_shortcode( $attr ) {
-	global $comment;
-
-	$attr = shortcode_atts( array( 'before' => '', 'after' => '' ), $attr );
-	$link = '<a class="permalink" href="' . esc_url( get_comment_link( $comment->comment_ID ) ) . '" title="' . sprintf( esc_attr__( 'Permalink to comment %1$s', 'hybrid-core' ), $comment->comment_ID ) . '">' . __( 'Permalink', 'hybrid-core' ) . '</a>';
-	return $attr['before'] . $link . $attr['after'];
-}
-
-/**
- * Displays a comment's edit link to users that have the capability to edit the comment.
- *
- * @since 0.7.0
- * @access public
- * @return string
- */
-function hybrid_comment_edit_link_shortcode( $attr ) {
-	global $comment;
-
-	$edit_link = get_edit_comment_link( $comment->comment_ID );
-
-	if ( !$edit_link )
-		return '';
-
-	$attr = shortcode_atts( array( 'before' => '', 'after' => '' ), $attr );
-
-	$link = '<a class="comment-edit-link" href="' . esc_url( $edit_link ) . '" title="' . sprintf( esc_attr__( 'Edit %1$s', 'hybrid-core' ), $comment->comment_type ) . '"><span class="edit">' . __( 'Edit', 'hybrid-core' ) . '</span></a>';
-	$link = apply_filters( 'edit_comment_link', $link, $comment->comment_ID );
-
-	return $attr['before'] . $link . $attr['after'];
-}
-
-/**
- * Displays a reply link for the 'comment' comment_type if threaded comments are enabled.
- *
- * @since 0.7.0
- * @access public
- * @return string
- */
-function hybrid_comment_reply_link_shortcode( $attr ) {
-
-	if ( !get_option( 'thread_comments' ) || 'comment' !== get_comment_type() )
-		return '';
-
-	$defaults = array(
-		'reply_text' => __( 'Reply', 'hybrid-core' ),
-		'login_text' => __( 'Log in to reply.', 'hybrid-core' ),
-		'depth' => intval( $GLOBALS['comment_depth'] ),
-		'max_depth' => get_option( 'thread_comments_depth' ),
-		'before' => '',
-		'after' => ''
-	);
-	$attr = shortcode_atts( $defaults, $attr );
-
-	return get_comment_reply_link( $attr );
-}
-
+<?php
+function st_one_third( $atts, $content = null ) {
+   return '<div class="one_third">' . do_shortcode($content) . '</div>';
+}
+add_shortcode('one_third', 'st_one_third');
+
+function st_one_third_last( $atts, $content = null ) {
+   return '<div class="one_third last">' . do_shortcode($content) . '</div><div class="clear"></div>';
+}
+add_shortcode('one_third_last', 'st_one_third_last');
+
+function st_two_thirds( $atts, $content = null ) {
+   return '<div class="two_thirds">' . do_shortcode($content) . '</div>';
+}
+add_shortcode('two_thirds', 'st_two_thirds');
+
+function st_two_thirds_last( $atts, $content = null ) {
+   return '<div class="two_thirds last">' . do_shortcode($content) . '</div><div class="clear"></div>';
+}
+add_shortcode('two_thirds_last', 'st_two_thirds_last');
+
+// Shortcodes - Messages -------------------------------------------------------- //
+function message_download( $atts, $content = null ) {
+   return '<p class="download">' . $content . '</p>';
+}
+add_shortcode( 'Download', 'message_download' );
+
+function message_alert( $atts, $content = null ) {
+   return '<p class="alert">' . $content . '</p>';
+}
+add_shortcode( 'Alert', 'message_alert' );
+
+function message_note( $atts, $content = null ) {
+   return '<p class="note">' . $content . '</p>';
+}
+add_shortcode( 'Note', 'message_note' );
+
+
+function message_info( $atts, $content = null ) {
+   return '<p class="info">' . $content . '</p>';
+}
+add_shortcode( 'Info', 'message_info' );
+
+
+// Shortcodes - About Author -------------------------------------------------------- //
+
+function about_author( $atts, $content = null ) {
+   return '<div class="about_author">' . $content . '</div>';
+}
+add_shortcode( 'Author Info', 'about_author' );
+
+
+function icon_list_view( $atts, $content = null ) {
+   return '<div class="check_list">' . $content . '</div>';
+}
+add_shortcode( 'Icon List', 'icon_list_view' );
+
+
+// Shortcodes - Boxes -------------------------------------------------------- //
+
+function normal_box( $atts, $content = null ) {
+   return '<div class="boxes normal_box">' . $content . '</div>';
+}
+add_shortcode( 'Normal_Box', 'normal_box' );
+
+function warning_box( $atts, $content = null ) {
+   return '<div class="boxes warning_box">' . $content . '</div>';
+}
+add_shortcode( 'Warning_Box', 'warning_box' );
+
+function about_box( $atts, $content = null ) {
+   return '<div class="boxes about_box">' . $content . '</div>';
+}
+add_shortcode( 'About_Box', 'about_box' );
+
+function download_box( $atts, $content = null ) {
+   return '<div class="boxes download_box">' . $content . '</div>';
+}
+add_shortcode( 'Download_Box', 'download_box' );
+
+function info_box( $atts, $content = null ) {
+   return '<div class="boxes info_box">' . $content . '</div>';
+}
+add_shortcode( 'Info_Box', 'info_box' );
+
+
+function alert_box( $atts, $content = null ) {
+   return '<div class="boxes alert_box">' . $content . '</div>';
+}
+add_shortcode( 'Alert_Box', 'alert_box' );
+
+// Shortcodes - Small Buttons -------------------------------------------------------- //
+
+function small_button( $atts, $content ) {
+ return '<div class="small_button '.$atts['class'].'">' . $content . '</div>';
+}
+add_shortcode( 'Small_Button', 'small_button' );
+
+//FUNCTION NAME : Related post as per tags
+//RETURNS : a search box wrapped in a div
+
+// 1-4 col 
+
+function st_one_half( $atts, $content = null ) {
+   return '<div class="one_half">' . do_shortcode($content) . '</div>';
+}
+add_shortcode('one_half', 'st_one_half');
+
+
+function st_one_half_last( $atts, $content = null ) {
+   return '<div class="one_half last">' . do_shortcode($content) . '</div><div class="clear"></div>';
+}
+add_shortcode('one_half_last', 'st_one_half_last');
+
+
+function st_one_fourth( $atts, $content = null ) {
+   return '<div class="one_fourth">' . do_shortcode($content) . '</div>';
+}
+add_shortcode('one_fourth', 'st_one_fourth');
+
+
+function st_one_fourth_last( $atts, $content = null ) {
+   return '<div class="one_fourth last">' . do_shortcode($content) . '</div><div class="clear"></div>';
+}
+add_shortcode('one_fourth_last', 'st_one_fourth_last');
+
+function st_three_fourths( $atts, $content = null ) {
+   return '<div class="three_fourths">' . do_shortcode($content) . '</div>';
+}
+add_shortcode('three_fourths', 'st_three_fourths');
+
+
+function st_three_fourths_last( $atts, $content = null ) {
+   return '<div class="three_fourths last">' . do_shortcode($content) . '</div><div class="clear"></div>';
+}
+add_shortcode('three_fourths_last', 'st_three_fourths_last');
+
+
+function st_one_fifth( $atts, $content = null ) {
+   return '<div class="one_fifth">' . do_shortcode($content) . '</div>';
+}
+add_shortcode('one_fifth', 'st_one_fifth');
+
+function st_two_fifth( $atts, $content = null ) {
+   return '<div class="two_fifth">' . do_shortcode($content) . '</div>';
+}
+add_shortcode('two_fifth', 'st_two_fifth');
+
+function st_three_fifth( $atts, $content = null ) {
+   return '<div class="three_fifth">' . do_shortcode($content) . '</div>';
+}
+add_shortcode('three_fifth', 'st_three_fifth');
+
+function st_four_fifth( $atts, $content = null ) {
+   return '<div class="four_fifth">' . do_shortcode($content) . '</div>';
+}
+add_shortcode('four_fifth', 'st_four_fifth');
+
+//
+
+function st_one_fifth_last( $atts, $content = null ) {
+   return '<div class="one_fifth last">' . do_shortcode($content) . '</div><div class="clear"></div>';
+}
+add_shortcode('one_fifth_last', 'st_one_fifth_last');
+
+function st_two_fifth_last( $atts, $content = null ) {
+   return '<div class="two_fifth last">' . do_shortcode($content) . '</div><div class="clear"></div>';
+}
+add_shortcode('two_fifth_last', 'st_two_fifth_last');
+
+function st_three_fifth_last( $atts, $content = null ) {
+   return '<div class="three_fifth last">' . do_shortcode($content) . '</div><div class="clear"></div>';
+}
+add_shortcode('three_fifth_last', 'st_three_fifth_last');
+
+function st_four_fifth_last( $atts, $content = null ) {
+   return '<div class="four_fifth last">' . do_shortcode($content) . '</div><div class="clear"></div>';
+}
+add_shortcode('four_fifth_last', 'st_four_fifth_last');
+
+// 1-6 col 
+
+// one_sixth
+function st_one_sixth( $atts, $content = null ) {
+   return '<div class="one_sixth">' . do_shortcode($content) . '</div>';
+}
+add_shortcode('one_sixth', 'st_one_sixth');
+
+function st_one_sixth_last( $atts, $content = null ) {
+   return '<div class="one_sixth last">' . do_shortcode($content) . '</div><div class="clear"></div>';
+}
+add_shortcode('one_sixth_last', 'st_one_sixth_last');
+
+// five_sixth
+function st_five_sixth( $atts, $content = null ) {
+   return '<div class="five_sixth">' . do_shortcode($content) . '</div>';
+}
+add_shortcode('five_sixth', 'st_five_sixth');
+
+function st_five_sixth_last( $atts, $content = null ) {
+   return '<div class="five_sixth last">' . do_shortcode($content) . '</div><div class="clear"></div>';
+}
+add_shortcode('five_sixth_last', 'st_five_sixth_last');
+
+function st_linebreak( $atts, $content = null ) {
+	return '<hr /><div class="clear"></div>';
+}
+add_shortcode('clearline', 'st_linebreak');
+
+
+// Shortcodes - Boxes - Equal -------------------------------------------------------- //
+
+function normal_box_equal( $atts, $content = null ) {
+   return '<div class="boxes normal_box small">' . $content . '</div>';
+}
+add_shortcode( 'Normal_Box_Equal', 'normal_box_equal' );
+
+function warning_box_equal( $atts, $content = null ) {
+   return '<div class="boxes warning_box small">' . $content . '</div>';
+}
+add_shortcode( 'Warning_Box_Equal', 'warning_box_equal' );
+
+function about_box_equal( $atts, $content = null ) {
+   return '<div class="boxes about_box small">' . $content . '</div>';
+}
+add_shortcode( 'About_Box_Equal', 'about_box' );
+
+function download_box_equal( $atts, $content = null ) {
+   return '<div class="boxes download_box small">' . $content . '</div>';
+}
+add_shortcode( 'Download_Box_Equal', 'download_box_equal' );
+
+function info_box_equal( $atts, $content = null ) {
+   return '<div class="boxes info_box small">' . $content . '</div>';
+}
+add_shortcode( 'Info_Box_Equal', 'info_box_equal' );
+
+
+function alert_box_equal( $atts, $content = null ) {
+   return '<div class="boxes alert_box small">' . $content . '</p></div>';
+}
+add_shortcode( 'Alert_Box_Equal', 'alert_box_equal' );
+
+
+// Shortcodes - Content Columns -------------------------------------------------------- //
+
+function one_half_column( $atts, $content = null ) {
+   return '<div class="one_half_column left">' . $content . '</div>';
+}
+add_shortcode( 'One_Half', 'one_half_column' );
+
+function one_half_last( $atts, $content = null ) {
+   return '<div class="one_half_column right">' . $content . '</p></div><div class="clear_spacer clearfix"></div>';
+}
+add_shortcode( 'One_Half_Last', 'one_half_last' );
+
+
+function one_third_column( $atts, $content = null ) {
+   return '<div class="one_third_column left">' . $content . '</p></div>';
+}
+add_shortcode( 'One_Third', 'one_third_column' );
+
+function one_third_column_last( $atts, $content = null ) {
+   return '<div class="one_third_column_last right">' . $content . '</p></div><div class="clear_spacer clearfix"></div>';
+}
+add_shortcode( 'One_Third_Last', 'one_third_column_last' );
+
+
+function one_fourth_column( $atts, $content = null ) {
+   return '<div class="one_fourth_column left">' . $content . '</p></div>';
+}
+add_shortcode( 'One_Fourth', 'one_fourth_column' );
+
+function one_fourth_column_last( $atts, $content = null ) {
+   return '<div class="one_fourth_column_last right">' . $content . '</p></div><div class="clear_spacer clearfix"></div>';
+}
+add_shortcode( 'One_Fourth_Last', 'one_fourth_column_last' );
+
+
+function two_thirds( $atts, $content = null ) {
+   return '<div class="two_thirds left">' . $content . '</p></div>';
+}
+add_shortcode( 'Two_Third', 'two_thirds' );
+
+function two_thirds_last( $atts, $content = null ) {
+   return '<div class="two_thirds_last right">' . $content . '</p></div><div class="clear_spacer clearfix"></div>';
+}
+add_shortcode( 'Two_Third_Last', 'two_thirds_last' );
+
+
+function dropcaps( $atts, $content = null ) {
+   return '<p class="dropcaps">' . $content . '</p>';
+}
+add_shortcode( 'Dropcaps', 'dropcaps' );
+
+// Callouts
+
+function st_callout( $atts, $content = null ) {
+	extract(shortcode_atts(array(
+		'width' => '',
+		'align' => ''
+    ), $atts));
+	$style;
+	if ($width || $align) {
+	 $style .= 'style="';
+	 if ($width) $style .= 'width:'.$width.'px;';
+	 if ($align == 'left' || 'right') $style .= 'float:'.$align.';';
+	 if ($align == 'center') $style .= 'margin:0px auto;';
+	 $style .= '"';
+	}
+   return '<div class="cta" '.$style.'>' . do_shortcode($content) . '</div><div class="clear"></div>';
+}
+add_shortcode('callout', 'st_callout');
+
+
+
+// Buttons
+function st_button( $atts, $content = null ) {
+	extract(shortcode_atts(array(
+		'link' => '',
+		'size' => 'medium',
+		'color' => '',
+		'target' => '_self',
+		'caption' => '',
+		'align' => 'right'
+    ), $atts));	
+	$button;
+	$button .= '<div class="button '.$size.' '. $align.'">';
+	$button .= '<a target="'.$target.'" class="button '.$color.'" href="'.$link.'">';
+	$button .= $content;
+	if ($caption != '') {
+	$button .= '<br /><span class="btn_caption">'.$caption.'</span>';
+	};
+	$button .= '</a></div>';
+	return $button;
+}
+add_shortcode('button', 'st_button');
+
+
+// Tabs
+add_shortcode( 'tabgroup', 'st_tabgroup' );
+
+function st_tabgroup( $atts, $content ){
+	
+$GLOBALS['tab_count'] = 0;
+do_shortcode( $content );
+
+if( is_array( $GLOBALS['tabs'] ) ){
+	
+foreach( $GLOBALS['tabs'] as $tab ){
+$tabs[] = '<li><a href="#'.$tab['id'].'">'.$tab['title'].'</a></li>';
+$panes[] = '<li id="'.$tab['id'].'Tab">'.$tab['content'].'</li>';
+}
+$return = "\n".'<!-- the tabs --><ul class="tabs">'.implode( "\n", $tabs ).'</ul>'."\n".'<!-- tab "panes" --><ul class="tabs-content">'.implode( "\n", $panes ).'</ul>'."\n";
+}
+return $return;
+
+}
+
+add_shortcode( 'tab', 'st_tab' );
+function st_tab( $atts, $content ){
+extract(shortcode_atts(array(
+	'title' => '%d',
+	'id' => '%d'
+), $atts));
+
+$x = $GLOBALS['tab_count'];
+$GLOBALS['tabs'][$x] = array(
+	'title' => sprintf( $title, $GLOBALS['tab_count'] ),
+	'content' =>  do_shortcode($content),
+	'id' =>  $id );
+
+$GLOBALS['tab_count']++;
+}
+
+
+// Toggle
+function st_toggle( $atts, $content = null ) {
+	extract(shortcode_atts(array(
+		 'title' => '',
+		 'style' => 'list'
+    ), $atts));
+	output;
+	$output .= '<div class="'.$style.'"><p class="trigger"><a href="#">' .$title. '</a></p>';
+	$output .= '<div class="toggle_container"><div class="block">';
+	$output .= do_shortcode($content);
+	$output .= '</div></div></div>';
+
+	return $output;
+	}
+add_shortcode('toggle', 'st_toggle');
+
+
+/*-----------------------------------------------------------------------------------*/
+// Latest Posts
+// Example Use: [latest excerpt="true" thumbs="true" width="50" height="50" num="5" cat="8,10,11"]
+/*-----------------------------------------------------------------------------------*/
+
+
+function st_latest($atts, $content = null) {
+	extract(shortcode_atts(array(
+	"offset" => '',
+	"num" => '5',
+	"thumbs" => 'false',
+	"excerpt" => 'false',
+	"length" => '50',
+	"morelink" => '',
+	"width" => '100',
+	"height" => '100',
+	"type" => 'post',
+	"parent" => '',
+	"cat" => '',
+	"orderby" => 'date',
+	"order" => 'ASC'
+	), $atts));
+	global $post;
+	
+	$do_not_duplicate[] = $post->ID;
+	$args = array(
+	  'post__not_in' => $do_not_duplicate,
+		'cat' => $cat,
+		'post_type' => $type,
+		'post_parent'	=> $parent,
+		'showposts' => $num,
+		'orderby' => $orderby,
+		'offset' => $offset,
+		'order' => $order
+		);
+	// query
+	$myposts = new WP_Query($args);
+	
+	// container
+	$result='<div id="category-'.$cat.'" class="latestposts">';
+
+	while($myposts->have_posts()) : $myposts->the_post();
+		// item
+		$result.='<div class="latest-item clearfix">';
+		// title
+		if ($excerpt == 'true') {
+			$result.='<h4><a href="'.get_permalink().'">'.the_title("","",false).'</a></h4>';
+		} else {
+			$result.='<div class="latest-title"><a href="'.get_permalink().'">'.the_title("","",false).'</a></div>';			
+		}
+		
+		
+		// thumbnail
+		if (has_post_thumbnail() && $thumbs == 'true') {
+			$result.= '<img alt="'.get_the_title().'" class="alignleft latest-img" src="'.get_bloginfo('template_directory').'/thumb.php?src='.get_image_path().'&amp;h='.$height.'&amp;w='.$width.'"/>';
+		}
+
+		// excerpt		
+		if ($excerpt == 'true') {
+			// allowed tags in excerpts
+			$allowed_tags = '<a>,<i>,<em>,<b>,<strong>,<ul>,<ol>,<li>,<blockquote>,<img>,<span>,<p>';
+		 	// filter the content
+			$text = preg_replace('/\[.*\]/', '', strip_tags(get_the_excerpt(), $allowed_tags));
+			// remove the more-link
+			$pattern = '/(<a.*?class="more-link"[^>]*>)(.*?)(<\/a>)/';
+			// display the new excerpt
+			$content = preg_replace($pattern,"", $text);
+			$result.= '<div class="latest-excerpt">'.st_limit_words($content,$length).'</div>';
+		}
+		
+		// excerpt		
+		if ($morelink) {
+			$result.= '<a class="more-link" href="'.get_permalink().'">'.$morelink.'</a>';
+		}
+		
+		// item close
+		$result.='</div>';
+  
+	endwhile;
+		wp_reset_postdata();
+	
+	// container close
+	$result.='</div>';
+	return $result;
+}
+add_shortcode("latest", "st_latest");
+
+// Example Use: [latest excerpt="true" thumbs="true" width="50" height="50" num="5" cat="8,10,11"]
+
+/*-----------------------------------------------------------------------------------*/
+// Creates an additional hook to limit the excerpt
+/*-----------------------------------------------------------------------------------*/
+
+function st_limit_words($string, $word_limit) {
+	// creates an array of words from $string (this will be our excerpt)
+	// explode divides the excerpt up by using a space character
+	$words = explode(' ', $string);
+	// this next bit chops the $words array and sticks it back together
+	// starting at the first word '0' and ending at the $word_limit
+	// the $word_limit which is passed in the function will be the number
+	// of words we want to use
+	// implode glues the chopped up array back together using a space character
+	return implode(' ', array_slice($words, 0, $word_limit));
+}
+
+
+// Related Posts - [related_posts]
+add_shortcode('related_posts', 'st_related_posts');
+function st_related_posts( $atts ) {
+	extract(shortcode_atts(array(
+	    'limit' => '5',
+	), $atts));
+
+	global $wpdb, $post, $table_prefix;
+
+	if ($post->ID) {
+		$retval = '<div class="st_relatedposts">';
+		$retval .= '<h4>Related Posts</h4>';
+		$retval .= '<ul>';
+ 		// Get tags
+		$tags = wp_get_post_tags($post->ID);
+		$tagsarray = array();
+		foreach ($tags as $tag) {
+			$tagsarray[] = $tag->term_id;
+		}
+		$tagslist = implode(',', $tagsarray);
+
+		// Do the query
+		$q = "SELECT p.*, count(tr.object_id) as count
+			FROM $wpdb->term_taxonomy AS tt, $wpdb->term_relationships AS tr, $wpdb->posts AS p WHERE tt.taxonomy ='post_tag' AND tt.term_taxonomy_id = tr.term_taxonomy_id AND tr.object_id  = p.ID AND tt.term_id IN ($tagslist) AND p.ID != $post->ID
+				AND p.post_status = 'publish'
+				AND p.post_date_gmt < NOW()
+ 			GROUP BY tr.object_id
+			ORDER BY count DESC, p.post_date_gmt DESC
+			LIMIT $limit;";
+
+		$related = $wpdb->get_results($q);
+ 		if ( $related ) {
+			foreach($related as $r) {
+				$retval .= '<li><a title="'.wptexturize($r->post_title).'" href="'.get_permalink($r->ID).'">'.wptexturize($r->post_title).'</a></li>';
+			}
+		} else {
+			$retval .= '
+	<li>No related posts found</li>';
+		}
+		$retval .= '</ul>';
+		$retval .= '</div>';
+		return $retval;
+	}
+	return;
+}
+
+// Break
+function st_break( $atts, $content = null ) {
+	return '<div class="clear"></div>';
+}
+add_shortcode('clear', 'st_break');
+
+
+// Line Break
+
 ?>

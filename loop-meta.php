@@ -12,7 +12,7 @@
 
 	<?php if ( is_home() && !is_front_page() ) : ?>
 
-		<div class="loop-meta">
+		<div class="loop-meta Supreme-loop-meta-php">
 
 			<h1 class="loop-title"><?php echo get_post_field( 'post_title', get_queried_object_id() ); ?></h1>
 

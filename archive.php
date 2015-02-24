@@ -19,7 +19,7 @@ get_header(); // Loads the header.php template. ?>
 
 		<?php do_atomic( 'open_content' ); // supreme_open_content ?>
 
-		<div class="hfeed">
+		<div class="hfeed Supreme-archive-php">
 
 			<?php get_template_part( 'loop-meta' ); // Loads the loop-meta.php template. ?>
 			
